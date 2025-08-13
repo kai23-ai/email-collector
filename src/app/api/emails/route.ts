@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getConnection } from '../../../../lib/db';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 // GET - Fetch all emails
 export async function GET() {
   try {
     const connection = await getConnection();
-    const [rows] = await connection.query(
-      'SELECT * FROM emails ORDER BY created_at DESC'
-    );
+    const [rows] = await connection.query<RowDataPacket[]>('SELECT * FROM emails ORDER BY created_at DESC');
     await connection.end();
     
     return NextResponse.json({ success: true, data: rows });
@@ -23,7 +22,7 @@ export async function GET() {
 // POST - Add new email
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
+    const { email, name } = await request.json();
     
     if (!email) {
       return NextResponse.json(
@@ -35,9 +34,9 @@ export async function POST(request: NextRequest) {
     const connection = await getConnection();
     
     try {
-      await connection.query(
-        'INSERT INTO emails (email) VALUES (?)',
-        [email.toLowerCase().trim()]
+      const [result] = await connection.execute<ResultSetHeader>(
+        'INSERT INTO emails (email, name) VALUES (?, ?)',
+        [email.toLowerCase().trim(), name]
       );
       await connection.end();
       
@@ -45,10 +44,10 @@ export async function POST(request: NextRequest) {
         success: true, 
         message: 'Email added successfully' 
       });
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
       await connection.end();
       
-      if (dbError.code === 'ER_DUP_ENTRY') {
+      if (dbError && typeof dbError === 'object' && 'code' in dbError && (dbError as { code: string }).code === 'ER_DUP_ENTRY') {
         return NextResponse.json(
           { success: false, error: 'Email already exists' },
           { status: 409 }
@@ -69,7 +68,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE() {
   try {
     const connection = await getConnection();
-    await connection.query('DELETE FROM emails');
+    const [result] = await connection.execute<ResultSetHeader>('DELETE FROM emails');
     await connection.end();
     
     return NextResponse.json({ 

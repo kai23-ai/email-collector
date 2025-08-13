@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getConnection } from '../../../../../lib/db';
+import { ResultSetHeader } from 'mysql2';
 
 // DELETE - Delete specific email by ID
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return NextResponse.json(
@@ -17,10 +18,10 @@ export async function DELETE(
     }
 
     const connection = await getConnection();
-    const [result] = await connection.query(
+    const [result] = await connection.execute<ResultSetHeader>(
       'DELETE FROM emails WHERE id = ?',
       [id]
-    ) as any;
+    );
     await connection.end();
     
     if (result.affectedRows === 0) {
