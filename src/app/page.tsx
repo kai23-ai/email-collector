@@ -25,8 +25,8 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
-  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
-  const [copiedPassword, setCopiedPassword] = useState<string | null>(null);
+  const [copiedEmail, setCopiedEmail] = useState<number | null>(null);
+  const [copiedPassword, setCopiedPassword] = useState<number | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState<{[key: number]: boolean}>({});
   const [showInputPassword, setShowInputPassword] = useState(false);
@@ -372,10 +372,10 @@ export default function Home() {
     setTimeout(() => setMessage(''), 2000);
   };
 
-  const handleCopyEmail = async (emailToCopy: string) => {
+  const handleCopyEmail = async (emailToCopy: string, emailId: number) => {
     try {
       await navigator.clipboard.writeText(emailToCopy);
-      setCopiedEmail(emailToCopy);
+      setCopiedEmail(emailId);
       setMessage(`Email berhasil di-copy!`);
       
       // Reset copied state after animation
@@ -388,10 +388,10 @@ export default function Home() {
     }
   };
 
-  const handleCopyPassword = async (passwordToCopy: string) => {
+  const handleCopyPassword = async (passwordToCopy: string, emailId: number) => {
     try {
       await navigator.clipboard.writeText(passwordToCopy);
-      setCopiedPassword(passwordToCopy);
+      setCopiedPassword(emailId);
       setMessage(`Password berhasil di-copy!`);
       
       // Reset copied state after animation
@@ -985,14 +985,14 @@ export default function Home() {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleCopyEmail(emailItem.email)}
+                            onClick={() => handleCopyEmail(emailItem.email, emailItem.id)}
                             disabled={loading}
                             className={`text-blue-600 hover:text-blue-800 text-sm font-medium disabled:text-gray-400 flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-blue-50 transition-all duration-200 ${
-                              copiedEmail === emailItem.email ? 'animate-pulse bg-blue-100' : ''
+                              copiedEmail === emailItem.id ? 'animate-pulse bg-blue-100' : ''
                             }`}
                             title="Copy email"
                           >
-                            {copiedEmail === emailItem.email ? (
+                            {copiedEmail === emailItem.id ? (
                               <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
@@ -1005,14 +1005,14 @@ export default function Home() {
                           </button>
                           {emailItem.password && (
                             <button
-                              onClick={() => handleCopyPassword(emailItem.password!)}
+                              onClick={() => handleCopyPassword(emailItem.password!, emailItem.id)}
                               disabled={loading}
                               className={`text-purple-600 hover:text-purple-800 text-sm font-medium disabled:text-gray-400 flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-purple-50 transition-all duration-200 ${
-                                copiedPassword === emailItem.password ? 'animate-pulse bg-purple-100' : ''
+                                copiedPassword === emailItem.id ? 'animate-pulse bg-purple-100' : ''
                               }`}
                               title="Copy password"
                             >
-                              {copiedPassword === emailItem.password ? (
+                              {copiedPassword === emailItem.id ? (
                                 <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
