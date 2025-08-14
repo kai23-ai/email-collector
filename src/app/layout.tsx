@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Email Collector",
-  description: "Aplikasi untuk mengumpulkan dan mengelola daftar email",
+  title: "KAI - Email Collector",
+  description: "KAI - Aplikasi untuk mengumpulkan dan mengelola daftar email",
 };
 
 export default function RootLayout({
