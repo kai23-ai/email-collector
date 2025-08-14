@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 
 interface EmailData {
   id: number;
@@ -333,6 +334,18 @@ export default function Home() {
   };
 
   const handleDelete = async (emailId: number) => {
+    const confirmResult = await Swal.fire({
+      title: 'Hapus email ini?',
+      text: 'Tindakan ini tidak dapat dibatalkan.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, hapus',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#d33',
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
     try {
       setLoading(true);
       const response = await fetch(`/api/emails/${emailId}`, {
@@ -342,16 +355,19 @@ export default function Home() {
       const result = await response.json();
 
       if (result.success) {
+        await Swal.fire({ title: 'Terhapus!', text: 'Email berhasil dihapus.', icon: 'success' });
         setMessage('Email berhasil dihapus');
         await fetchEmails(); // Refresh the list
         if (searchQuery) {
           handleSearch(searchQuery); // Refresh search results
         }
       } else {
+        await Swal.fire({ title: 'Gagal', text: result.error || 'Gagal menghapus email', icon: 'error' });
         setMessage(result.error || 'Gagal menghapus email');
       }
     } catch (error) {
       console.error('Error deleting email:', error);
+      await Swal.fire({ title: 'Error', text: 'Error menghapus email', icon: 'error' });
       setMessage('Error menghapus email');
     } finally {
       setLoading(false);
@@ -501,31 +517,44 @@ export default function Home() {
   };
 
   const handleClearAll = async () => {
-    if (confirm('Apakah Anda yakin ingin menghapus semua email?')) {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/emails', {
-          method: 'DELETE',
-        });
+    const confirmResult = await Swal.fire({
+      title: 'Hapus semua email?',
+      text: 'Semua data email akan dihapus dan tidak dapat dikembalikan.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, hapus semua',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#d33',
+    });
 
-        const result = await response.json();
+    if (!confirmResult.isConfirmed) return;
 
-        if (result.success) {
-          setMessage('Semua email berhasil dihapus');
-          await fetchEmails(); // Refresh the list
-          clearSearch(); // Clear search when all emails deleted
-        } else {
-          setMessage(result.error || 'Gagal menghapus email');
-        }
-      } catch (error) {
-        console.error('Error clearing emails:', error);
-        setMessage('Error menghapus email');
-      } finally {
-        setLoading(false);
+    try {
+      setLoading(true);
+      const response = await fetch('/api/emails', {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        await Swal.fire({ title: 'Terhapus!', text: 'Semua email berhasil dihapus.', icon: 'success' });
+        setMessage('Semua email berhasil dihapus');
+        await fetchEmails(); // Refresh the list
+        clearSearch(); // Clear search when all emails deleted
+      } else {
+        await Swal.fire({ title: 'Gagal', text: result.error || 'Gagal menghapus email', icon: 'error' });
+        setMessage(result.error || 'Gagal menghapus email');
       }
-
-      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      console.error('Error clearing emails:', error);
+      await Swal.fire({ title: 'Error', text: 'Error menghapus email', icon: 'error' });
+      setMessage('Error menghapus email');
+    } finally {
+      setLoading(false);
     }
+
+    setTimeout(() => setMessage(''), 3000);
   };
 
   // Drag and Drop functions
