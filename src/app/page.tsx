@@ -226,6 +226,44 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
+  const handleCopyEmail = async (email: string) => {
+    try {
+      await navigator.clipboard.writeText(email);
+      setMessage(`Email "${email}" berhasil di-copy!`);
+      setTimeout(() => setMessage(''), 2000);
+    } catch (error) {
+      console.error('Failed to copy email:', error);
+      setMessage('Gagal copy email');
+      setTimeout(() => setMessage(''), 2000);
+    }
+  };
+
+  const handleCopyAllEmails = async () => {
+    try {
+      const emailList = emails.map(item => item.email).join('\n');
+      await navigator.clipboard.writeText(emailList);
+      setMessage(`${emails.length} email berhasil di-copy!`);
+      setTimeout(() => setMessage(''), 2000);
+    } catch (error) {
+      console.error('Failed to copy emails:', error);
+      setMessage('Gagal copy email');
+      setTimeout(() => setMessage(''), 2000);
+    }
+  };
+
+  const handleCopyAsCommaList = async () => {
+    try {
+      const emailList = emails.map(item => item.email).join(', ');
+      await navigator.clipboard.writeText(emailList);
+      setMessage(`${emails.length} email berhasil di-copy sebagai comma-separated list!`);
+      setTimeout(() => setMessage(''), 2000);
+    } catch (error) {
+      console.error('Failed to copy emails:', error);
+      setMessage('Gagal copy email');
+      setTimeout(() => setMessage(''), 2000);
+    }
+  };
+
   const handleClearAll = async () => {
     if (confirm('Apakah Anda yakin ingin menghapus semua email?')) {
       try {
@@ -381,19 +419,45 @@ export default function Home() {
               <h2 className="text-lg font-semibold text-gray-900">
                 Daftar Email ({searchQuery ? `${emails.length} dari ${allEmails.length}` : emails.length})
               </h2>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={handleCopyAllEmails}
+                  disabled={loading}
+                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy
+                </button>
+                <button
+                  onClick={handleCopyAsCommaList}
+                  disabled={loading}
+                  className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400 flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy CSV
+                </button>
                 <button
                   onClick={handleExport}
                   disabled={loading}
-                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
+                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-1"
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
                   Export
                 </button>
                 <button
                   onClick={handleClearAll}
                   disabled={loading}
-                  className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400"
+                  className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400 flex items-center gap-1"
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                   Hapus Semua
                 </button>
               </div>
@@ -439,19 +503,36 @@ export default function Home() {
               {emails.length > 0 ? (
                 emails.map((emailItem) => (
                   <div key={emailItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col flex-1">
                       <span className="text-sm text-gray-700">{emailItem.email}</span>
                       <span className="text-xs text-gray-500">
                         {new Date(emailItem.created_at).toLocaleDateString('id-ID')}
                       </span>
                     </div>
-                    <button
-                      onClick={() => handleDelete(emailItem.id)}
-                      disabled={loading}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium disabled:text-gray-400"
-                    >
-                      Hapus
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleCopyEmail(emailItem.email)}
+                        disabled={loading}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:text-gray-400 flex items-center gap-1"
+                        title="Copy email"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy
+                      </button>
+                      <button
+                        onClick={() => handleDelete(emailItem.id)}
+                        disabled={loading}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium disabled:text-gray-400 flex items-center gap-1"
+                        title="Hapus email"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Hapus
+                      </button>
+                    </div>
                   </div>
                 ))
               ) : searchQuery ? (
