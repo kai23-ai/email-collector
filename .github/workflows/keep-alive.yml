@@ -35,8 +35,10 @@ jobs:
       - name: Ping Keep-Alive Endpoint
         if: steps.check-time.outputs.active == 'true'
         run: |
-          echo "Pinging keep-alive endpoint..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://your-railway-url.railway.app/api/keep-alive)
+          RAILWAY_URL="https://email-collector-production.up.railway.app"
+          
+          echo "Pinging keep-alive endpoint: $RAILWAY_URL/api/keep-alive"
+          response=$(curl -s -o /dev/null -w "%{http_code}" "$RAILWAY_URL/api/keep-alive")
           if [ $response -eq 200 ]; then
             echo "✅ Keep-alive ping successful (HTTP $response)"
           else
