@@ -28,6 +28,8 @@ export default function Home() {
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [copiedPassword, setCopiedPassword] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState<{[key: number]: boolean}>({});
+  const [showInputPassword, setShowInputPassword] = useState(false);
 
   // Password options
   const passwordOptions = [
@@ -86,6 +88,8 @@ export default function Home() {
     setSearchQuery('');
     setMessage('');
     setDbInitialized(false);
+    setShowPassword({});
+    setShowInputPassword(false);
   };
 
   const initializeDatabase = async () => {
@@ -155,6 +159,17 @@ export default function Home() {
   const generateRandomPassword = () => {
     const randomIndex = Math.floor(Math.random() * passwordOptions.length);
     setPassword(passwordOptions[randomIndex]);
+  };
+
+  const togglePasswordVisibility = (emailId: number) => {
+    setShowPassword(prev => ({
+      ...prev,
+      [emailId]: !prev[emailId]
+    }));
+  };
+
+  const toggleInputPasswordVisibility = () => {
+    setShowInputPassword(!showInputPassword);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -534,15 +549,35 @@ export default function Home() {
                   Password (Opsional)
                 </label>
                 <div className="flex gap-2">
-                  <input
-                    type="text"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading || !dbInitialized}
-                    className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 transition-all duration-200 hover:shadow-md"
-                    placeholder="Password (opsional)"
-                  />
+                  <div className="relative flex-1">
+                    <input
+                      type={showInputPassword ? "text" : "password"}
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading || !dbInitialized}
+                      className="block w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 transition-all duration-200 hover:shadow-md"
+                      placeholder="Password (opsional)"
+                    />
+                    {password && (
+                      <button
+                        type="button"
+                        onClick={toggleInputPasswordVisibility}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {showInputPassword ? (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464M9.878 9.878a3 3 0 00-.007 4.243m4.242-4.242L15.536 15.536M14.122 14.122a3 3 0 01-4.243-.007m4.243.007l1.414 1.414M14.122 14.122l-4.243-4.243" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={generateRandomPassword}
@@ -772,9 +807,27 @@ export default function Home() {
                         </div>
                         {emailItem.password && (
                           <div className="flex-1">
-                            <span className="text-sm font-medium text-purple-700">
-                              Password: {emailItem.password}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-purple-700">
+                                Password: {showPassword[emailItem.id] ? emailItem.password : '••••••••'}
+                              </span>
+                              <button
+                                onClick={() => togglePasswordVisibility(emailItem.id)}
+                                className="text-purple-600 hover:text-purple-800 transition-colors"
+                                title={showPassword[emailItem.id] ? "Sembunyikan password" : "Lihat password"}
+                              >
+                                {showPassword[emailItem.id] ? (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464M9.878 9.878a3 3 0 00-.007 4.243m4.242-4.242L15.536 15.536M14.122 14.122a3 3 0 01-4.243-.007m4.243.007l1.414 1.414M14.122 14.122l-4.243-4.243" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -802,11 +855,11 @@ export default function Home() {
                       {emailItem.password && (
                         <button
                           onClick={() => handleCopyPassword(emailItem.password!)}
-                          disabled={loading}
+                          disabled={loading || !showPassword[emailItem.id]}
                           className={`text-purple-600 hover:text-purple-800 text-sm font-medium disabled:text-gray-400 flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-purple-50 transition-all duration-200 ${
                             copiedPassword === emailItem.password ? 'animate-pulse bg-purple-100' : ''
-                          }`}
-                          title="Copy password"
+                          } ${!showPassword[emailItem.id] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={showPassword[emailItem.id] ? "Copy password" : "Lihat password terlebih dahulu"}
                         >
                           {copiedPassword === emailItem.password ? (
                             <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
