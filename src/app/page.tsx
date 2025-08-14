@@ -37,6 +37,8 @@ export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchCurrentY, setTouchCurrentY] = useState<number | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isLongPressActive, setIsLongPressActive] = useState(false);
 
   // Password options
   const passwordOptions = [
@@ -543,49 +545,77 @@ export default function Home() {
     e.dataTransfer.dropEffect = 'move';
   };
 
-  // Touch events for mobile drag and drop
+  // Touch events for mobile drag and drop with long press
   const handleTouchStart = (e: React.TouchEvent, emailId: number) => {
     const touch = e.touches[0];
     setTouchStartY(touch.clientY);
-    setDraggedEmail(emailId);
-    setIsDragging(true);
+    
+    // Start long press timer (500ms)
+    const timer = setTimeout(() => {
+      setDraggedEmail(emailId);
+      setIsDragging(true);
+      setIsLongPressActive(true);
+      
+      // Haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 500);
+    
+    setLongPressTimer(timer);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!draggedEmail) return;
-    
     const touch = e.touches[0];
     setTouchCurrentY(touch.clientY);
     
-    // Prevent scrolling while dragging
-    e.preventDefault();
+    // If long press hasn't activated yet, check if user moved too much (cancel long press)
+    if (!isLongPressActive && touchStartY) {
+      const moveDistance = Math.abs(touch.clientY - touchStartY);
+      if (moveDistance > 10) {
+        // User is scrolling, cancel long press
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          setLongPressTimer(null);
+        }
+        return;
+      }
+    }
+    
+    // Only prevent scrolling if drag is active
+    if (isLongPressActive && draggedEmail) {
+      e.preventDefault();
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent, targetEmailId?: number) => {
-    if (!draggedEmail || !touchStartY || !touchCurrentY) {
-      setDraggedEmail(null);
-      setIsDragging(false);
-      setTouchStartY(null);
-      setTouchCurrentY(null);
-      return;
+    // Clear long press timer if still running
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
     }
-
-    // Find the element under the touch point
-    const touch = e.changedTouches[0];
-    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-    const emailElement = elementBelow?.closest('[data-email-id]');
     
-    if (emailElement) {
-      const targetId = parseInt(emailElement.getAttribute('data-email-id') || '0');
-      if (targetId && targetId !== draggedEmail) {
-        handleDrop(e as any, targetId);
+    // If long press was active and we have a drag operation
+    if (isLongPressActive && draggedEmail && touchStartY && touchCurrentY) {
+      // Find the element under the touch point
+      const touch = e.changedTouches[0];
+      const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+      const emailElement = elementBelow?.closest('[data-email-id]');
+      
+      if (emailElement) {
+        const targetId = parseInt(emailElement.getAttribute('data-email-id') || '0');
+        if (targetId && targetId !== draggedEmail) {
+          handleDrop(e as any, targetId);
+        }
       }
     }
 
+    // Reset all touch states
     setDraggedEmail(null);
     setIsDragging(false);
     setTouchStartY(null);
     setTouchCurrentY(null);
+    setIsLongPressActive(false);
   };
 
   const handleDrop = async (e: React.DragEvent, targetEmailId: number) => {
@@ -1033,7 +1063,7 @@ export default function Home() {
                   </svg>
                   <div>
                     <span className="hidden sm:inline">Drag dan drop email untuk mengubah urutan. Urutan akan tersimpan otomatis.</span>
-                    <span className="sm:hidden">Tekan dan tahan icon grip untuk drag & drop mengubah urutan email.</span>
+                    <span className="sm:hidden">Tekan lama icon grip (0.5 detik) untuk drag & drop mengubah urutan email.</span>
                   </div>
                 </div>
               </div>
@@ -1049,11 +1079,8 @@ export default function Home() {
                     onDragEnd={handleDragEnd}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, emailItem.id)}
-                    onTouchStart={(e) => handleTouchStart(e, emailItem.id)}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={(e) => handleTouchEnd(e, emailItem.id)}
-                    className={`p-3 sm:p-4 rounded-xl transition-all duration-200 animate-slide-up border hover:shadow-md select-none ${
-                      editingEmail === emailItem.id ? 'cursor-default' : 'cursor-move'
+                    className={`p-3 sm:p-4 rounded-xl transition-all duration-200 animate-slide-up border hover:shadow-md ${
+                      editingEmail === emailItem.id ? 'cursor-default' : 'cursor-default'
                     } ${
                       draggedEmail === emailItem.id 
                         ? 'bg-blue-100 border-blue-300 opacity-50 scale-105 shadow-lg' 
@@ -1062,8 +1089,7 @@ export default function Home() {
                         : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                     }`}
                     style={{ 
-                      animationDelay: `${index * 50}ms`,
-                      touchAction: editingEmail === emailItem.id ? 'auto' : 'none'
+                      animationDelay: `${index * 50}ms`
                     }}
                   >
                     {editingEmail === emailItem.id ? (
@@ -1123,7 +1149,18 @@ export default function Home() {
                             <span className="text-xs font-medium text-gray-500 bg-gray-200 px-2 py-1 rounded-full min-w-[24px] text-center">
                               {index + 1}
                             </span>
-                            <div className="drag-handle cursor-move text-gray-400 hover:text-gray-600 active:text-gray-700 transition-colors p-2 sm:p-1 -m-1 touch-manipulation rounded-lg hover:bg-gray-200 active:bg-gray-300" title="Drag untuk mengurutkan">
+                            <div 
+                              className={`drag-handle cursor-move transition-colors p-2 sm:p-1 -m-1 touch-manipulation rounded-lg select-none ${
+                                isLongPressActive && draggedEmail === emailItem.id 
+                                  ? 'text-blue-600 bg-blue-200' 
+                                  : 'text-gray-400 hover:text-gray-600 active:text-gray-700 hover:bg-gray-200 active:bg-gray-300'
+                              }`}
+                              title="Tekan lama untuk drag & drop"
+                              onTouchStart={(e) => handleTouchStart(e, emailItem.id)}
+                              onTouchMove={handleTouchMove}
+                              onTouchEnd={(e) => handleTouchEnd(e, emailItem.id)}
+                              style={{ touchAction: 'none' }}
+                            >
                               <svg className="w-5 h-5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                               </svg>
