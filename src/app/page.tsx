@@ -983,21 +983,21 @@ export default function Home() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-gray-200">
                           <button
                             onClick={() => handleCopyEmail(emailItem.email, emailItem.id)}
                             disabled={loading}
-                            className={`text-blue-600 hover:text-blue-800 text-sm font-medium disabled:text-gray-400 flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-blue-50 transition-all duration-200 ${
-                              copiedEmail === emailItem.id ? 'animate-pulse bg-blue-100' : ''
+                            className={`text-xs text-gray-500 hover:text-blue-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-all duration-200 ${
+                              copiedEmail === emailItem.id ? 'bg-blue-100 text-blue-600' : ''
                             }`}
                             title="Copy email"
                           >
                             {copiedEmail === emailItem.id ? (
-                              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                             ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                               </svg>
                             )}
@@ -1007,17 +1007,17 @@ export default function Home() {
                             <button
                               onClick={() => handleCopyPassword(emailItem.password!, emailItem.id)}
                               disabled={loading}
-                              className={`text-purple-600 hover:text-purple-800 text-sm font-medium disabled:text-gray-400 flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-purple-50 transition-all duration-200 ${
-                                copiedPassword === emailItem.id ? 'animate-pulse bg-purple-100' : ''
+                              className={`text-xs text-gray-500 hover:text-purple-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-purple-50 transition-all duration-200 ${
+                                copiedPassword === emailItem.id ? 'bg-purple-100 text-purple-600' : ''
                               }`}
                               title="Copy password"
                             >
                               {copiedPassword === emailItem.id ? (
-                                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                               ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                                 </svg>
                               )}
@@ -1027,10 +1027,10 @@ export default function Home() {
                           <button
                             onClick={() => startEdit(emailItem)}
                             disabled={loading}
-                            className="text-orange-600 hover:text-orange-800 text-sm font-medium disabled:text-gray-400 flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-orange-50 transition-all duration-200"
+                            className="text-xs text-gray-500 hover:text-orange-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-orange-50 transition-all duration-200"
                             title="Edit email"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                             Edit
@@ -1038,10 +1038,10 @@ export default function Home() {
                           <button
                             onClick={() => handleDelete(emailItem.id)}
                             disabled={loading}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium disabled:text-gray-400 flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-red-50 transition-all duration-200"
+                            className="text-xs text-gray-500 hover:text-red-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-all duration-200"
                             title="Hapus email"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                             Hapus
