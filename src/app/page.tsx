@@ -238,29 +238,74 @@ export default function Home() {
     }
   };
 
-  const handleCopyAllEmails = async () => {
-    try {
-      const emailList = emails.map(item => item.email).join('\n');
-      await navigator.clipboard.writeText(emailList);
-      setMessage(`${emails.length} email berhasil di-copy!`);
-      setTimeout(() => setMessage(''), 2000);
-    } catch (error) {
-      console.error('Failed to copy emails:', error);
-      setMessage('Gagal copy email');
-      setTimeout(() => setMessage(''), 2000);
-    }
-  };
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const handleCopyAsCommaList = async () => {
+    if (!file.name.endsWith('.txt')) {
+      setMessage('Hanya file .txt yang diperbolehkan');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
     try {
-      const emailList = emails.map(item => item.email).join(', ');
-      await navigator.clipboard.writeText(emailList);
-      setMessage(`${emails.length} email berhasil di-copy sebagai comma-separated list!`);
-      setTimeout(() => setMessage(''), 2000);
+      setLoading(true);
+      const text = await file.text();
+      const emailLines = text.split('\n')
+        .map(line => line.trim().toLowerCase())
+        .filter(line => line && validateEmail(line));
+
+      if (emailLines.length === 0) {
+        setMessage('Tidak ada email valid ditemukan dalam file');
+        setTimeout(() => setMessage(''), 3000);
+        return;
+      }
+
+      let successCount = 0;
+      let duplicateCount = 0;
+      let errorCount = 0;
+
+      for (const emailToImport of emailLines) {
+        try {
+          const response = await fetch('/api/emails', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: emailToImport }),
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            successCount++;
+          } else if (result.error?.includes('already exists')) {
+            duplicateCount++;
+          } else {
+            errorCount++;
+          }
+        } catch (error) {
+          errorCount++;
+        }
+      }
+
+      await fetchEmails(); // Refresh the list
+      
+      let importMessage = `Import selesai: ${successCount} berhasil`;
+      if (duplicateCount > 0) importMessage += `, ${duplicateCount} duplikat`;
+      if (errorCount > 0) importMessage += `, ${errorCount} error`;
+      
+      setMessage(importMessage);
+      setTimeout(() => setMessage(''), 5000);
+
     } catch (error) {
-      console.error('Failed to copy emails:', error);
-      setMessage('Gagal copy email');
-      setTimeout(() => setMessage(''), 2000);
+      console.error('Error importing file:', error);
+      setMessage('Error membaca file');
+      setTimeout(() => setMessage(''), 3000);
+    } finally {
+      setLoading(false);
+      // Reset file input
+      event.target.value = '';
     }
   };
 
@@ -420,26 +465,19 @@ export default function Home() {
                 Daftar Email ({searchQuery ? `${emails.length} dari ${allEmails.length}` : emails.length})
               </h2>
               <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={handleCopyAllEmails}
-                  disabled={loading}
-                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-1"
-                >
+                <label className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-1 cursor-pointer">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  Copy
-                </button>
-                <button
-                  onClick={handleCopyAsCommaList}
-                  disabled={loading}
-                  className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400 flex items-center gap-1"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Copy CSV
-                </button>
+                  Import
+                  <input
+                    type="file"
+                    accept=".txt"
+                    onChange={handleImportFile}
+                    disabled={loading}
+                    className="hidden"
+                  />
+                </label>
                 <button
                   onClick={handleExport}
                   disabled={loading}
@@ -461,6 +499,14 @@ export default function Home() {
                   Hapus Semua
                 </button>
               </div>
+            </div>
+
+            {/* Import Info */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-700">
+                <strong>Import:</strong> Upload file .txt dengan satu email per baris. 
+                Email duplikat akan dilewati secara otomatis.
+              </p>
             </div>
 
             {/* Search Box */}
