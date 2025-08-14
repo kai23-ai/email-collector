@@ -1,0 +1,53 @@
+name: Smart Keep Railway App Alive
+
+on:
+  schedule:
+    # Runs every 25 minutes during active hours only (7 AM - 11 PM WIB)
+    # This translates to UTC times: 00:00-16:00 (midnight-4PM UTC)
+    - cron: '0,25,50 0-16 * * *'  # Every 25 minutes from 00:00-16:59 UTC
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check Active Hours
+        id: check-time
+        run: |
+          # Get current UTC hour
+          UTC_HOUR=$(date -u +%H)
+          # Convert to WIB (UTC+7)
+          WIB_HOUR=$(( (UTC_HOUR + 7) % 24 ))
+          
+          echo "UTC Hour: $UTC_HOUR"
+          echo "WIB Hour: $WIB_HOUR"
+          
+          # Only run during active hours (7 AM - 11 PM WIB)
+          if [ $WIB_HOUR -ge 7 ] && [ $WIB_HOUR -le 23 ]; then
+            echo "active=true" >> $GITHUB_OUTPUT
+            echo "✅ Active hours - proceeding with keep-alive"
+          else
+            echo "active=false" >> $GITHUB_OUTPUT
+            echo "💤 Inactive hours - skipping to save credits"
+          fi
+      
+      - name: Ping Keep-Alive Endpoint
+        if: steps.check-time.outputs.active == 'true'
+        run: |
+          echo "Pinging keep-alive endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://your-railway-url.railway.app/api/keep-alive)
+          if [ $response -eq 200 ]; then
+            echo "✅ Keep-alive ping successful (HTTP $response)"
+          else
+            echo "❌ Keep-alive ping failed (HTTP $response)"
+            # Don't fail the job, just log the error
+          fi
+      
+      - name: Log Status
+        run: |
+          if [ "${{ steps.check-time.outputs.active }}" == "true" ]; then
+            echo "Keep-alive ping completed at: $(date -u) ($(date))"
+          else
+            echo "Keep-alive skipped to conserve Railway credits at: $(date -u) ($(date))"
+          fi

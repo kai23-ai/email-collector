@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "setup-db": "node scripts/setup-db.js"
+    "setup-db": "node scripts/setup-db.js",
+    "health-check": "curl -f http://localhost:3000/api/health || exit 1",
+    "keep-alive": "curl -f http://localhost:3000/api/keep-alive || exit 1"
   },
   "dependencies": {
     "@types/pg": "^8.15.5",

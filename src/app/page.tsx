@@ -30,6 +30,8 @@ export default function Home() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState<{[key: number]: boolean}>({});
   const [showInputPassword, setShowInputPassword] = useState(false);
+  const [editingEmail, setEditingEmail] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ email: '', password: '' });
 
   // Password options
   const passwordOptions = [
@@ -60,6 +62,44 @@ export default function Home() {
       fetchEmails();
     }
   }, [dbInitialized]);
+
+  // Smart keep-alive ping to prevent Railway idle while conserving credits
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const keepAlive = async () => {
+      try {
+        // Only ping during active hours (7 AM - 11 PM WIB)
+        const now = new Date();
+        const wibHour = (now.getUTCHours() + 7) % 24; // Convert to WIB (UTC+7)
+        
+        // Only keep alive during active hours to save credits
+        if (wibHour >= 7 && wibHour <= 23) {
+          await fetch('/api/keep-alive', {
+            method: 'GET',
+            cache: 'no-cache'
+          });
+          console.log('Keep-alive ping sent at', now.toLocaleString('id-ID'));
+        } else {
+          console.log('Skipping keep-alive during inactive hours');
+        }
+      } catch (error) {
+        console.log('Keep-alive ping failed:', error);
+      }
+    };
+
+    // Initial ping after 2 minutes
+    const initialTimeout = setTimeout(keepAlive, 120000);
+
+    // Then ping every 25 minutes (just before 30min idle timeout)
+    // This gives us ~38 pings per day during active hours only
+    const interval = setInterval(keepAlive, 1500000); // 25 minutes
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [isAuthenticated]);
 
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
