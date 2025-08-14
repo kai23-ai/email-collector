@@ -28,7 +28,7 @@ export default function Home() {
   const [copiedEmail, setCopiedEmail] = useState<number | null>(null);
   const [copiedPassword, setCopiedPassword] = useState<number | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [showPassword, setShowPassword] = useState<{[key: number]: boolean}>({});
+  const [showPassword, setShowPassword] = useState<{ [key: number]: boolean }>({});
   const [showInputPassword, setShowInputPassword] = useState(false);
   const [editingEmail, setEditingEmail] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ email: '', password: '' });
@@ -36,7 +36,7 @@ export default function Home() {
   // Password options
   const passwordOptions = [
     "23Feb1999",
-    "23Februari1999", 
+    "23Februari1999",
     "KhairulUmam@230299",
     "Chaeyoung23"
   ];
@@ -72,7 +72,7 @@ export default function Home() {
         // Only ping during active hours (7 AM - 11 PM WIB)
         const now = new Date();
         const wibHour = (now.getUTCHours() + 7) % 24; // Convert to WIB (UTC+7)
-        
+
         // Only keep alive during active hours to save credits
         if (wibHour >= 7 && wibHour <= 23) {
           await fetch('/api/keep-alive', {
@@ -103,7 +103,7 @@ export default function Home() {
 
   const handlePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (pin === correctPin) {
       setIsAuthenticated(true);
       localStorage.setItem('emailCollectorAuth', 'true');
@@ -138,7 +138,7 @@ export default function Home() {
         method: 'POST',
       });
       const result = await response.json();
-      
+
       if (result.success) {
         setDbInitialized(true);
       } else {
@@ -155,7 +155,7 @@ export default function Home() {
       setLoading(true);
       const response = await fetch('/api/emails');
       const result = await response.json();
-      
+
       if (result.success) {
         setAllEmails(result.data);
         setEmails(result.data);
@@ -172,7 +172,7 @@ export default function Home() {
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    
+
     if (!query.trim()) {
       setEmails(allEmails);
       return;
@@ -248,9 +248,9 @@ export default function Home() {
           password: editForm.password.trim() || null
         }),
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         setMessage('Email berhasil diupdate!');
         setEditingEmail(null);
@@ -268,15 +268,15 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-    
+
     setTimeout(() => setMessage(''), 3000);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const trimmedEmail = email.trim().toLowerCase();
-    
+
     if (!trimmedEmail) {
       setMessage('Email tidak boleh kosong');
       return;
@@ -294,14 +294,14 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: trimmedEmail,
           password: password.trim() || null
         }),
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         setEmail('');
         setPassword('');
@@ -321,7 +321,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-    
+
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -331,9 +331,9 @@ export default function Home() {
       const response = await fetch(`/api/emails/${emailId}`, {
         method: 'DELETE',
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         setMessage('Email berhasil dihapus');
         await fetchEmails(); // Refresh the list
@@ -349,25 +349,25 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-    
+
     setTimeout(() => setMessage(''), 3000);
   };
 
   const handleExport = () => {
-    const dataStr = emails.map(item => 
+    const dataStr = emails.map(item =>
       item.password ? `${item.email}:${item.password}` : item.email
     ).join('\n');
     const dataBlob = new Blob([dataStr], { type: 'text/plain' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    const filename = searchQuery 
+    const filename = searchQuery
       ? `email-list-search-${searchQuery.replace(/[^a-zA-Z0-9]/g, '_')}.txt`
       : 'email-list.txt';
     link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
-    
+
     setMessage('File berhasil didownload!');
     setTimeout(() => setMessage(''), 2000);
   };
@@ -376,13 +376,12 @@ export default function Home() {
     try {
       await navigator.clipboard.writeText(emailToCopy);
       setCopiedEmail(emailId);
-      setMessage(`Email berhasil di-copy!`);
       
-      // Reset copied state after animation
-      setTimeout(() => setCopiedEmail(null), 1000);
-      setTimeout(() => setMessage(''), 2000);
+      // Reset copied state after animation - no message to avoid layout shift
+      setTimeout(() => setCopiedEmail(null), 1500);
     } catch (error) {
       console.error('Failed to copy email:', error);
+      // Only show error message for actual failures
       setMessage('Gagal copy email');
       setTimeout(() => setMessage(''), 2000);
     }
@@ -392,13 +391,12 @@ export default function Home() {
     try {
       await navigator.clipboard.writeText(passwordToCopy);
       setCopiedPassword(emailId);
-      setMessage(`Password berhasil di-copy!`);
       
-      // Reset copied state after animation
-      setTimeout(() => setCopiedPassword(null), 1000);
-      setTimeout(() => setMessage(''), 2000);
+      // Reset copied state after animation - no message to avoid layout shift
+      setTimeout(() => setCopiedPassword(null), 1500);
     } catch (error) {
       console.error('Failed to copy password:', error);
+      // Only show error message for actual failures
       setMessage('Gagal copy password');
       setTimeout(() => setMessage(''), 2000);
     }
@@ -455,14 +453,14 @@ export default function Home() {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
               email: emailToImport,
               password: passwordToImport || null
             }),
           });
-          
+
           const result = await response.json();
-          
+
           if (result.success) {
             successCount++;
           } else if (result.error?.includes('already exists')) {
@@ -476,11 +474,11 @@ export default function Home() {
       }
 
       await fetchEmails(); // Refresh the list
-      
+
       let importMessage = `Import selesai: ${successCount} berhasil`;
       if (duplicateCount > 0) importMessage += `, ${duplicateCount} duplikat`;
       if (errorCount > 0) importMessage += `, ${errorCount} error`;
-      
+
       setMessage(importMessage);
       setTimeout(() => setMessage(''), 5000);
 
@@ -502,9 +500,9 @@ export default function Home() {
         const response = await fetch('/api/emails', {
           method: 'DELETE',
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
           setMessage('Semua email berhasil dihapus');
           await fetchEmails(); // Refresh the list
@@ -518,7 +516,7 @@ export default function Home() {
       } finally {
         setLoading(false);
       }
-      
+
       setTimeout(() => setMessage(''), 3000);
     }
   };
@@ -643,7 +641,7 @@ export default function Home() {
                   placeholder="masukkan@email.com"
                 />
               </div>
-              
+
               <div>
                 <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                   Password (Opsional)
@@ -692,7 +690,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            
+
             <button
               type="submit"
               disabled={loading || !dbInitialized}
@@ -730,11 +728,10 @@ export default function Home() {
 
           {/* Message */}
           {message && (
-            <div className={`mt-4 p-4 rounded-xl animate-slide-down ${
-              message.includes('berhasil') 
-                ? 'bg-green-50 border border-green-200 text-green-800' 
+            <div className={`mt-4 p-4 rounded-xl animate-slide-down ${message.includes('berhasil')
+                ? 'bg-green-50 border border-green-200 text-green-800'
                 : 'bg-red-50 border border-red-200 text-red-800'
-            }`}>
+              }`}>
               <div className="flex items-center">
                 {message.includes('berhasil') ? (
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -796,7 +793,7 @@ export default function Home() {
                 <p className="text-sm text-blue-800 font-medium">Import File</p>
                 <p className="text-sm text-blue-700">Upload file .txt dengan format:</p>
                 <p className="text-xs text-blue-600 mt-1 font-mono">
-                  • Satu email per baris: user@example.com<br/>
+                  • Satu email per baris: user@example.com<br />
                   • Email dengan password: user@example.com:password123
                 </p>
               </div>
@@ -826,7 +823,7 @@ export default function Home() {
             {/* Header with Actions */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">
-                Daftar Email 
+                Daftar Email
                 <span className="ml-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
                   {searchQuery ? `${emails.length} dari ${allEmails.length}` : emails.length}
                 </span>
@@ -886,8 +883,8 @@ export default function Home() {
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {emails.length > 0 ? (
                 emails.map((emailItem, index) => (
-                  <div 
-                    key={emailItem.id} 
+                  <div
+                    key={emailItem.id}
                     className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 animate-slide-up border border-gray-200 hover:shadow-md"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
@@ -900,7 +897,7 @@ export default function Home() {
                             <input
                               type="email"
                               value={editForm.email}
-                              onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               placeholder="Email address"
                             />
@@ -910,7 +907,7 @@ export default function Home() {
                             <input
                               type="text"
                               value={editForm.password}
-                              onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+                              onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               placeholder="Password (optional)"
                             />
@@ -987,9 +984,8 @@ export default function Home() {
                           <button
                             onClick={() => handleCopyEmail(emailItem.email, emailItem.id)}
                             disabled={loading}
-                            className={`text-xs text-gray-500 hover:text-blue-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-all duration-200 ${
-                              copiedEmail === emailItem.id ? 'bg-blue-100 text-blue-600' : ''
-                            }`}
+                            className={`text-xs text-gray-500 hover:text-blue-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-all duration-200 ${copiedEmail === emailItem.id ? 'bg-blue-100 text-blue-600' : ''
+                              }`}
                             title="Copy email"
                           >
                             {copiedEmail === emailItem.id ? (
@@ -1007,9 +1003,8 @@ export default function Home() {
                             <button
                               onClick={() => handleCopyPassword(emailItem.password!, emailItem.id)}
                               disabled={loading}
-                              className={`text-xs text-gray-500 hover:text-purple-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-purple-50 transition-all duration-200 ${
-                                copiedPassword === emailItem.id ? 'bg-purple-100 text-purple-600' : ''
-                              }`}
+                              className={`text-xs text-gray-500 hover:text-purple-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-purple-50 transition-all duration-200 ${copiedPassword === emailItem.id ? 'bg-purple-100 text-purple-600' : ''
+                                }`}
                               title="Copy password"
                             >
                               {copiedPassword === emailItem.id ? (
