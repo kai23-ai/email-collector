@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 interface EmailData {
   id: number;
   email: string;
+  password?: string;
   created_at: string;
 }
 
@@ -17,6 +18,7 @@ export default function Home() {
 
   // Email functionality
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [emails, setEmails] = useState<EmailData[]>([]);
   const [allEmails, setAllEmails] = useState<EmailData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,7 +26,16 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+  const [copiedPassword, setCopiedPassword] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Password options
+  const passwordOptions = [
+    "23Feb1999",
+    "23Februari1999", 
+    "KhairulUmam@230299",
+    "Chaeyoung23"
+  ];
 
   // Check if user is already authenticated (from localStorage)
   useEffect(() => {
@@ -69,6 +80,7 @@ export default function Home() {
     setPinError('');
     // Reset all states
     setEmail('');
+    setPassword('');
     setEmails([]);
     setAllEmails([]);
     setSearchQuery('');
@@ -124,7 +136,8 @@ export default function Home() {
 
     // Simple client-side search
     const filteredEmails = allEmails.filter(emailItem =>
-      emailItem.email.toLowerCase().includes(query.toLowerCase())
+      emailItem.email.toLowerCase().includes(query.toLowerCase()) ||
+      (emailItem.password && emailItem.password.toLowerCase().includes(query.toLowerCase()))
     );
     setEmails(filteredEmails);
   };
@@ -137,6 +150,11 @@ export default function Home() {
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  const generateRandomPassword = () => {
+    const randomIndex = Math.floor(Math.random() * passwordOptions.length);
+    setPassword(passwordOptions[randomIndex]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,13 +179,17 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: trimmedEmail }),
+        body: JSON.stringify({ 
+          email: trimmedEmail,
+          password: password.trim() || null
+        }),
       });
       
       const result = await response.json();
       
       if (result.success) {
         setEmail('');
+        setPassword('');
         setMessage('Email berhasil ditambahkan!');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
@@ -217,7 +239,9 @@ export default function Home() {
   };
 
   const handleExport = () => {
-    const dataStr = emails.map(item => item.email).join('\n');
+    const dataStr = emails.map(item => 
+      item.password ? `${item.email}:${item.password}` : item.email
+    ).join('\n');
     const dataBlob = new Blob([dataStr], { type: 'text/plain' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
@@ -249,6 +273,22 @@ export default function Home() {
     }
   };
 
+  const handleCopyPassword = async (passwordToCopy: string) => {
+    try {
+      await navigator.clipboard.writeText(passwordToCopy);
+      setCopiedPassword(passwordToCopy);
+      setMessage(`Password berhasil di-copy!`);
+      
+      // Reset copied state after animation
+      setTimeout(() => setCopiedPassword(null), 1000);
+      setTimeout(() => setMessage(''), 2000);
+    } catch (error) {
+      console.error('Failed to copy password:', error);
+      setMessage('Gagal copy password');
+      setTimeout(() => setMessage(''), 2000);
+    }
+  };
+
   const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -262,12 +302,12 @@ export default function Home() {
     try {
       setLoading(true);
       const text = await file.text();
-      const emailLines = text.split('\n')
-        .map(line => line.trim().toLowerCase())
-        .filter(line => line && validateEmail(line));
+      const lines = text.split('\n')
+        .map(line => line.trim())
+        .filter(line => line);
 
-      if (emailLines.length === 0) {
-        setMessage('Tidak ada email valid ditemukan dalam file');
+      if (lines.length === 0) {
+        setMessage('File kosong atau tidak valid');
         setTimeout(() => setMessage(''), 3000);
         return;
       }
@@ -276,14 +316,34 @@ export default function Home() {
       let duplicateCount = 0;
       let errorCount = 0;
 
-      for (const emailToImport of emailLines) {
+      for (const line of lines) {
         try {
+          let emailToImport = '';
+          let passwordToImport = '';
+
+          // Check if line contains email:password format
+          if (line.includes(':')) {
+            const [emailPart, passwordPart] = line.split(':', 2);
+            emailToImport = emailPart.trim().toLowerCase();
+            passwordToImport = passwordPart.trim();
+          } else {
+            emailToImport = line.toLowerCase();
+          }
+
+          if (!validateEmail(emailToImport)) {
+            errorCount++;
+            continue;
+          }
+
           const response = await fetch('/api/emails', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email: emailToImport }),
+            body: JSON.stringify({ 
+              email: emailToImport,
+              password: passwordToImport || null
+            }),
           });
           
           const result = await response.json();
@@ -417,7 +477,7 @@ export default function Home() {
   // Main Application (after authentication)
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
           <div className="flex items-center justify-between mb-6">
@@ -453,19 +513,49 @@ export default function Home() {
         {/* Add Email Form */}
         <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 mb-8 border border-white/20 animate-slide-up">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading || !dbInitialized}
-                className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 transition-all duration-200 hover:shadow-md"
-                placeholder="masukkan@email.com"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading || !dbInitialized}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 transition-all duration-200 hover:shadow-md"
+                  placeholder="masukkan@email.com"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password (Opsional)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading || !dbInitialized}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 transition-all duration-200 hover:shadow-md"
+                    placeholder="Password (opsional)"
+                  />
+                  <button
+                    type="button"
+                    onClick={generateRandomPassword}
+                    disabled={loading || !dbInitialized}
+                    className="px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-400 transition-all duration-200 transform hover:scale-105 shadow-md"
+                    title="Generate Password"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
             
             <button
@@ -569,8 +659,11 @@ export default function Home() {
               </svg>
               <div>
                 <p className="text-sm text-blue-800 font-medium">Import File</p>
-                <p className="text-sm text-blue-700">Upload file .txt dengan satu email per baris. Email duplikat akan dilewati secara otomatis.</p>
-                <p className="text-xs text-blue-600 mt-1">Format: satu email per baris, contoh: user@example.com</p>
+                <p className="text-sm text-blue-700">Upload file .txt dengan format:</p>
+                <p className="text-xs text-blue-600 mt-1 font-mono">
+                  • Satu email per baris: user@example.com<br/>
+                  • Email dengan password: user@example.com:password123
+                </p>
               </div>
             </div>
           </div>
@@ -622,7 +715,7 @@ export default function Home() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Cari email..."
+                  placeholder="Cari email atau password..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   disabled={loading}
@@ -648,7 +741,7 @@ export default function Home() {
                 <p className="mt-2 text-sm text-gray-600 animate-fade-in">
                   Menampilkan {emails.length} hasil untuk &quot;{searchQuery}&quot;
                   {emails.length === 0 && (
-                    <span className="text-red-600"> - Tidak ada email yang ditemukan</span>
+                    <span className="text-red-600"> - Tidak ada data yang ditemukan</span>
                   )}
                 </p>
               )}
@@ -664,16 +757,27 @@ export default function Home() {
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="flex flex-col flex-1">
-                      <span className="text-sm font-medium text-gray-900">{emailItem.email}</span>
-                      <span className="text-xs text-gray-500">
-                        {new Date(emailItem.created_at).toLocaleDateString('id-ID', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <span className="text-sm font-medium text-gray-900">{emailItem.email}</span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {new Date(emailItem.created_at).toLocaleDateString('id-ID', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                        {emailItem.password && (
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-purple-700">
+                              Password: {emailItem.password}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -693,8 +797,29 @@ export default function Home() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         )}
-                        {copiedEmail === emailItem.email ? 'Copied!' : 'Copy'}
+                        Email
                       </button>
+                      {emailItem.password && (
+                        <button
+                          onClick={() => handleCopyPassword(emailItem.password!)}
+                          disabled={loading}
+                          className={`text-purple-600 hover:text-purple-800 text-sm font-medium disabled:text-gray-400 flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-purple-50 transition-all duration-200 ${
+                            copiedPassword === emailItem.password ? 'animate-pulse bg-purple-100' : ''
+                          }`}
+                          title="Copy password"
+                        >
+                          {copiedPassword === emailItem.password ? (
+                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                            </svg>
+                          )}
+                          Pass
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(emailItem.id)}
                         disabled={loading}
@@ -714,7 +839,7 @@ export default function Home() {
                   <svg className="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  <p className="text-lg font-medium">Tidak ada email yang cocok</p>
+                  <p className="text-lg font-medium">Tidak ada data yang cocok</p>
                   <p className="text-sm">dengan pencarian &quot;{searchQuery}&quot;</p>
                   <button
                     onClick={clearSearch}

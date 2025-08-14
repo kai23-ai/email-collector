@@ -21,7 +21,7 @@ export async function GET() {
 // POST - Add new email
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
+    const { email, password } = await request.json();
     
     if (!email) {
       return NextResponse.json(
@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
     
     try {
       await client.query(
-        'INSERT INTO emails (email) VALUES ($1)',
-        [email.toLowerCase().trim()]
+        'INSERT INTO emails (email, password) VALUES ($1, $2)',
+        [email.toLowerCase().trim(), password || null]
       );
       client.release();
       

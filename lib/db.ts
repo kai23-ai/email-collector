@@ -24,9 +24,16 @@ export async function initDatabase() {
       CREATE TABLE IF NOT EXISTS emails (
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Add password column if it doesn't exist (for existing tables)
+    await client.query(`
+      ALTER TABLE emails 
+      ADD COLUMN IF NOT EXISTS password VARCHAR(255)
     `);
 
     // Create trigger for updated_at
