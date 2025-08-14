@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const connection = await getConnection();
     const searchTerm = `%${query}%`;
     
-    const [rows] = await connection.execute(
+    const [rows] = await connection.query(
       'SELECT * FROM emails WHERE email LIKE ? ORDER BY created_at DESC',
       [searchTerm]
     );

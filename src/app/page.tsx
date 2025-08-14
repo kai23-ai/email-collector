@@ -428,7 +428,7 @@ export default function Home() {
               </div>
               {searchQuery && (
                 <p className="mt-2 text-sm text-gray-600">
-                  Menampilkan {emails.length} hasil untuk "{searchQuery}"
+                  Menampilkan {emails.length} hasil untuk &quot;{searchQuery}&quot;
                   {emails.length === 0 && (
                     <span className="text-red-600"> - Tidak ada email yang ditemukan</span>
                   )}
@@ -459,7 +459,7 @@ export default function Home() {
                   <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  <p>Tidak ada email yang cocok dengan pencarian "{searchQuery}"</p>
+                  <p>Tidak ada email yang cocok dengan pencarian &quot;{searchQuery}&quot;</p>
                   <button
                     onClick={clearSearch}
                     className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
