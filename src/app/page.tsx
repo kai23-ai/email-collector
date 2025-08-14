@@ -520,6 +520,72 @@ export default function Home() {
           )}
         </div>
 
+        {/* Import Section - Always visible */}
+        <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-white/20 animate-slide-up mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900">
+              Import & Export
+            </h2>
+            <div className="flex gap-2 flex-wrap">
+              <label className="px-4 py-2 text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 cursor-pointer flex items-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-md">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Import File
+                <input
+                  type="file"
+                  accept=".txt"
+                  onChange={handleImportFile}
+                  disabled={loading}
+                  className="hidden"
+                />
+              </label>
+              {allEmails.length > 0 && (
+                <button
+                  onClick={handleExport}
+                  disabled={loading}
+                  className="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:bg-gray-400 flex items-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-md"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export ({allEmails.length})
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Import Info */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-blue-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="text-sm text-blue-800 font-medium">Import File</p>
+                <p className="text-sm text-blue-700">Upload file .txt dengan satu email per baris. Email duplikat akan dilewati secara otomatis.</p>
+                <p className="text-xs text-blue-600 mt-1">Format: satu email per baris, contoh: user@example.com</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Empty State */}
+        {allEmails.length === 0 && dbInitialized && (
+          <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-8 border border-white/20 animate-slide-up text-center">
+            <svg className="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada email tersimpan</h3>
+            <p className="text-gray-600 mb-4">Mulai dengan menambahkan email secara manual atau import dari file .txt</p>
+            <div className="flex justify-center gap-4">
+              <div className="text-sm text-gray-500">
+                <span className="font-medium">Tips:</span> Gunakan tombol "Import File" di atas untuk menambahkan banyak email sekaligus
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Email List */}
         {allEmails.length > 0 && (
           <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-white/20 animate-slide-up">
@@ -532,29 +598,6 @@ export default function Home() {
                 </span>
               </h2>
               <div className="flex gap-2 flex-wrap">
-                <label className="px-4 py-2 text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 cursor-pointer flex items-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-md">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  Import
-                  <input
-                    type="file"
-                    accept=".txt"
-                    onChange={handleImportFile}
-                    disabled={loading}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={handleExport}
-                  disabled={loading}
-                  className="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:bg-gray-400 flex items-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-md"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Export
-                </button>
                 <button
                   onClick={handleClearAll}
                   disabled={loading}
@@ -565,19 +608,6 @@ export default function Home() {
                   </svg>
                   Hapus Semua
                 </button>
-              </div>
-            </div>
-
-            {/* Import Info */}
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <div className="flex items-start">
-                <svg className="w-5 h-5 text-blue-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <p className="text-sm text-blue-800 font-medium">Import File</p>
-                  <p className="text-sm text-blue-700">Upload file .txt dengan satu email per baris. Email duplikat akan dilewati secara otomatis.</p>
-                </div>
               </div>
             </div>
 
