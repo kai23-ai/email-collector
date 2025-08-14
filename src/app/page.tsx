@@ -35,6 +35,8 @@ export default function Home() {
   const [editForm, setEditForm] = useState({ email: '', password: '' });
   const [draggedEmail, setDraggedEmail] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchCurrentY, setTouchCurrentY] = useState<number | null>(null);
 
   // Password options
   const passwordOptions = [
@@ -541,6 +543,51 @@ export default function Home() {
     e.dataTransfer.dropEffect = 'move';
   };
 
+  // Touch events for mobile drag and drop
+  const handleTouchStart = (e: React.TouchEvent, emailId: number) => {
+    const touch = e.touches[0];
+    setTouchStartY(touch.clientY);
+    setDraggedEmail(emailId);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!draggedEmail) return;
+    
+    const touch = e.touches[0];
+    setTouchCurrentY(touch.clientY);
+    
+    // Prevent scrolling while dragging
+    e.preventDefault();
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, targetEmailId?: number) => {
+    if (!draggedEmail || !touchStartY || !touchCurrentY) {
+      setDraggedEmail(null);
+      setIsDragging(false);
+      setTouchStartY(null);
+      setTouchCurrentY(null);
+      return;
+    }
+
+    // Find the element under the touch point
+    const touch = e.changedTouches[0];
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    const emailElement = elementBelow?.closest('[data-email-id]');
+    
+    if (emailElement) {
+      const targetId = parseInt(emailElement.getAttribute('data-email-id') || '0');
+      if (targetId && targetId !== draggedEmail) {
+        handleDrop(e as any, targetId);
+      }
+    }
+
+    setDraggedEmail(null);
+    setIsDragging(false);
+    setTouchStartY(null);
+    setTouchCurrentY(null);
+  };
+
   const handleDrop = async (e: React.DragEvent, targetEmailId: number) => {
     e.preventDefault();
     
@@ -681,23 +728,23 @@ export default function Home() {
 
   // Main Application (after authentication)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="text-center mb-6 sm:mb-8 animate-fade-in">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               KAI
             </h1>
             <button
               onClick={handleLogout}
-              className="group relative px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-medium rounded-xl shadow-lg hover:from-red-600 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 hover:shadow-xl"
+              className="group relative px-3 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-medium rounded-xl shadow-lg hover:from-red-600 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105 hover:shadow-xl"
             >
-              <span className="flex items-center gap-2">
-                <svg className="w-4 h-4 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="flex items-center gap-1 sm:gap-2">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                Logout
+                <span className="text-xs sm:text-sm">Logout</span>
               </span>
               <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-red-600 to-pink-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 -z-10"></div>
             </button>
@@ -716,9 +763,9 @@ export default function Home() {
         </div>
 
         {/* Add Email Form */}
-        <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 mb-8 border border-white/20 animate-slide-up">
+        <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-white/20 animate-slide-up">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                   Email Address
@@ -738,7 +785,7 @@ export default function Home() {
                 <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                   Password (Opsional)
                 </label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
                     <input
                       type={showInputPassword ? "text" : "password"}
@@ -772,12 +819,15 @@ export default function Home() {
                     type="button"
                     onClick={generateRandomPassword}
                     disabled={loading || !dbInitialized}
-                    className="px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-400 transition-all duration-200 transform hover:scale-105 shadow-md"
+                    className="px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-400 transition-all duration-200 transform hover:scale-105 shadow-md whitespace-nowrap"
                     title="Generate Password"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
+                    <span className="flex items-center gap-2">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span className="sm:hidden">Generate</span>
+                    </span>
                   </button>
                 </div>
               </div>
@@ -841,17 +891,17 @@ export default function Home() {
         </div>
 
         {/* Import Section - Always visible */}
-        <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-white/20 animate-slide-up mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">
+        <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-4 sm:p-6 border border-white/20 animate-slide-up mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
               Import & Export
             </h2>
-            <div className="flex gap-2 flex-wrap">
-              <label className="px-4 py-2 text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 cursor-pointer flex items-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-md">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="px-4 py-3 text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 cursor-pointer flex items-center justify-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-md">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                Import File
+                <span>Import File</span>
                 <input
                   type="file"
                   accept=".txt"
@@ -864,12 +914,12 @@ export default function Home() {
                 <button
                   onClick={handleExport}
                   disabled={loading}
-                  className="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:bg-gray-400 flex items-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-md"
+                  className="px-4 py-3 text-sm bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:bg-gray-400 flex items-center justify-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-md"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Export ({allEmails.length})
+                  <span>Export ({allEmails.length})</span>
                 </button>
               )}
             </div>
@@ -913,23 +963,26 @@ export default function Home() {
         {allEmails.length > 0 && (
           <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl p-6 border border-white/20 animate-slide-up">
             {/* Header with Actions */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                Daftar Email
-                <span className="ml-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                  {searchQuery ? `${emails.length} dari ${allEmails.length}` : emails.length}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                  Daftar Email
+                </h2>
+                <span className="inline-block mt-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                  {searchQuery ? `${emails.length} dari ${allEmails.length}` : emails.length} email
                 </span>
-              </h2>
-              <div className="flex gap-2 flex-wrap">
+              </div>
+              <div className="flex gap-2">
                 <button
                   onClick={handleClearAll}
                   disabled={loading}
-                  className="px-4 py-2 text-sm bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 disabled:bg-gray-400 flex items-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-md"
+                  className="px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 disabled:bg-gray-400 flex items-center gap-2 transition-all duration-200 transform hover:scale-105 shadow-md"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
-                  Hapus Semua
+                  <span className="hidden sm:inline">Hapus Semua</span>
+                  <span className="sm:hidden">Hapus</span>
                 </button>
               </div>
             </div>
@@ -974,11 +1027,14 @@ export default function Home() {
             {/* Email List */}
             {emails.length > 0 && (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                <div className="flex items-center gap-2 text-sm text-blue-800">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-start gap-2 text-sm text-blue-800">
+                  <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>Drag dan drop email untuk mengubah urutan. Urutan akan tersimpan otomatis.</span>
+                  <div>
+                    <span className="hidden sm:inline">Drag dan drop email untuk mengubah urutan. Urutan akan tersimpan otomatis.</span>
+                    <span className="sm:hidden">Tekan dan tahan icon grip untuk drag & drop mengubah urutan email.</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -987,12 +1043,16 @@ export default function Home() {
                 emails.map((emailItem, index) => (
                   <div
                     key={emailItem.id}
+                    data-email-id={emailItem.id}
                     draggable={!editingEmail}
                     onDragStart={(e) => handleDragStart(e, emailItem.id)}
                     onDragEnd={handleDragEnd}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, emailItem.id)}
-                    className={`p-4 rounded-xl transition-all duration-200 animate-slide-up border hover:shadow-md ${
+                    onTouchStart={(e) => handleTouchStart(e, emailItem.id)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={(e) => handleTouchEnd(e, emailItem.id)}
+                    className={`p-3 sm:p-4 rounded-xl transition-all duration-200 animate-slide-up border hover:shadow-md select-none ${
                       editingEmail === emailItem.id ? 'cursor-default' : 'cursor-move'
                     } ${
                       draggedEmail === emailItem.id 
@@ -1001,48 +1061,51 @@ export default function Home() {
                         ? 'bg-green-50 border-green-200 border-dashed border-2'
                         : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                     }`}
-                    style={{ animationDelay: `${index * 50}ms` }}
+                    style={{ 
+                      animationDelay: `${index * 50}ms`,
+                      touchAction: editingEmail === emailItem.id ? 'auto' : 'none'
+                    }}
                   >
                     {editingEmail === emailItem.id ? (
                       // Edit Mode
                       <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                             <input
                               type="email"
                               value={editForm.email}
                               onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               placeholder="Email address"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
                             <input
                               type="text"
                               value={editForm.password}
                               onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               placeholder="Password (optional)"
                             />
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row gap-3">
                           <button
                             onClick={() => saveEdit(emailItem.id)}
                             disabled={loading}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-2 transition-all duration-200"
+                            className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center gap-2 transition-all duration-200 font-medium"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
-                            Simpan
+                            Simpan Perubahan
                           </button>
                           <button
                             onClick={cancelEdit}
                             disabled={loading}
-                            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 flex items-center gap-2 transition-all duration-200"
+                            className="flex-1 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 flex items-center justify-center gap-2 transition-all duration-200 font-medium"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1053,121 +1116,133 @@ export default function Home() {
                       </div>
                     ) : (
                       // View Mode
-                      <div className="flex items-center justify-between">
-                        {/* Order Number & Drag Handle */}
-                        <div className="flex items-center mr-3">
+                      <div className="space-y-3">
+                        {/* Header with Order Number & Drag Handle */}
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-medium text-gray-500 bg-gray-200 px-2 py-1 rounded-full min-w-[24px] text-center">
                               {index + 1}
                             </span>
-                            <div className="drag-handle cursor-move text-gray-400 hover:text-gray-600 transition-colors p-1" title="Drag untuk mengurutkan">
-                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <div className="drag-handle cursor-move text-gray-400 hover:text-gray-600 active:text-gray-700 transition-colors p-2 sm:p-1 -m-1 touch-manipulation rounded-lg hover:bg-gray-200 active:bg-gray-300" title="Drag untuk mengurutkan">
+                              <svg className="w-5 h-5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                               </svg>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex flex-col flex-1">
-                          <div className="flex items-center gap-4">
-                            <div className="flex-1">
-                              <span className="text-sm font-medium text-gray-900">{emailItem.email}</span>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {new Date(emailItem.created_at).toLocaleDateString('id-ID', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </div>
-                            </div>
-                            {emailItem.password && (
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-purple-700">
-                                    Password: {showPassword[emailItem.id] ? emailItem.password : '••••••••'}
-                                  </span>
-                                  <button
-                                    onClick={() => togglePasswordVisibility(emailItem.id)}
-                                    className="text-purple-600 hover:text-purple-800 transition-colors"
-                                    title={showPassword[emailItem.id] ? "Sembunyikan password" : "Lihat password"}
-                                  >
-                                    {showPassword[emailItem.id] ? (
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464M9.878 9.878a3 3 0 00-.007 4.243m4.242-4.242L15.536 15.536M14.122 14.122a3 3 0 01-4.243-.007m4.243.007l1.414 1.414M14.122 14.122l-4.243-4.243" />
-                                      </svg>
-                                    ) : (
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                      </svg>
-                                    )}
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+                          <div className="text-xs text-gray-500">
+                            {new Date(emailItem.created_at).toLocaleDateString('id-ID', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </div>
                         </div>
-                        <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-gray-200">
+
+                        {/* Email Content */}
+                        <div className="space-y-2">
+                          <div className="break-all">
+                            <span className="text-sm font-medium text-gray-900">{emailItem.email}</span>
+                          </div>
+                          
+                          {emailItem.password && (
+                            <div className="flex items-center justify-between bg-purple-50 p-2 rounded-lg">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <span className="text-xs font-medium text-purple-700">Password:</span>
+                                <span className="text-sm font-medium text-purple-700 break-all">
+                                  {showPassword[emailItem.id] ? emailItem.password : '••••••••'}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => togglePasswordVisibility(emailItem.id)}
+                                className="text-purple-600 hover:text-purple-800 transition-colors p-1 flex-shrink-0"
+                                title={showPassword[emailItem.id] ? "Sembunyikan password" : "Lihat password"}
+                              >
+                                {showPassword[emailItem.id] ? (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L8.464 8.464M9.878 9.878a3 3 0 00-.007 4.243m4.242-4.242L15.536 15.536M14.122 14.122a3 3 0 01-4.243-.007m4.243.007l1.414 1.414M14.122 14.122l-4.243-4.243" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
                           <button
                             onClick={() => handleCopyEmail(emailItem.email, emailItem.id)}
                             disabled={loading}
-                            className={`text-xs text-gray-500 hover:text-blue-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-all duration-200 ${copiedEmail === emailItem.id ? 'bg-blue-100 text-blue-600' : ''
-                              }`}
+                            className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
+                              copiedEmail === emailItem.id 
+                                ? 'bg-green-100 text-green-700 border border-green-200' 
+                                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                            } disabled:opacity-50`}
                             title="Copy email"
                           >
                             {copiedEmail === emailItem.id ? (
-                              <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                             ) : (
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                               </svg>
                             )}
-                            Email
+                            <span>Copy Email</span>
                           </button>
+                          
                           {emailItem.password && (
                             <button
                               onClick={() => handleCopyPassword(emailItem.password!, emailItem.id)}
                               disabled={loading}
-                              className={`text-xs text-gray-500 hover:text-purple-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-purple-50 transition-all duration-200 ${copiedPassword === emailItem.id ? 'bg-purple-100 text-purple-600' : ''
-                                }`}
+                              className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
+                                copiedPassword === emailItem.id 
+                                  ? 'bg-green-100 text-green-700 border border-green-200' 
+                                  : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+                              } disabled:opacity-50`}
                               title="Copy password"
                             >
                               {copiedPassword === emailItem.id ? (
-                                <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                               ) : (
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                                 </svg>
                               )}
-                              Pass
+                              <span>Copy Pass</span>
                             </button>
                           )}
+                          
                           <button
                             onClick={() => startEdit(emailItem)}
                             disabled={loading}
-                            className="text-xs text-gray-500 hover:text-orange-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-orange-50 transition-all duration-200"
+                            className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 rounded-lg transition-all duration-200 disabled:opacity-50"
                             title="Edit email"
                           >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
-                            Edit
+                            <span>Edit</span>
                           </button>
+                          
                           <button
                             onClick={() => handleDelete(emailItem.id)}
                             disabled={loading}
-                            className="text-xs text-gray-500 hover:text-red-600 disabled:text-gray-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-all duration-200"
+                            className="flex items-center gap-2 px-3 py-2 text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-lg transition-all duration-200 disabled:opacity-50"
                             title="Hapus email"
                           >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                            Hapus
+                            <span>Hapus</span>
                           </button>
                         </div>
                       </div>
