@@ -24,6 +24,7 @@ export default function Home() {
   const [emails, setEmails] = useState<EmailData[]>([]);
   const [allEmails, setAllEmails] = useState<EmailData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortOption, setSortOption] = useState<'custom' | 'newest' | 'oldest' | 'az' | 'za'>('custom');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
@@ -166,7 +167,6 @@ export default function Home() {
 
       if (result.success) {
         setAllEmails(result.data);
-        setEmails(result.data);
       } else {
         setMessage('Gagal memuat daftar email');
       }
@@ -180,24 +180,52 @@ export default function Home() {
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-
-    if (!query.trim()) {
-      setEmails(allEmails);
-      return;
-    }
-
-    // Simple client-side search
-    const filteredEmails = allEmails.filter(emailItem =>
-      emailItem.email.toLowerCase().includes(query.toLowerCase()) ||
-      (emailItem.password && emailItem.password.toLowerCase().includes(query.toLowerCase()))
-    );
-    setEmails(filteredEmails);
   };
 
   const clearSearch = () => {
     setSearchQuery('');
-    setEmails(allEmails);
   };
+
+  const computeFilteredAndSortedEmails = (
+    source: EmailData[],
+    query: string,
+    sort: 'custom' | 'newest' | 'oldest' | 'az' | 'za'
+  ): EmailData[] => {
+    const trimmedQuery = query.trim().toLowerCase();
+
+    let result = !trimmedQuery
+      ? [...source]
+      : source.filter(item => {
+          const emailMatch = item.email.toLowerCase().includes(trimmedQuery);
+          const passwordMatch = (item.password || '').toLowerCase().includes(trimmedQuery);
+          return emailMatch || passwordMatch;
+        });
+
+    switch (sort) {
+      case 'newest':
+        result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case 'oldest':
+        result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      case 'az':
+        result.sort((a, b) => a.email.localeCompare(b.email, 'id', { sensitivity: 'base' }));
+        break;
+      case 'za':
+        result.sort((a, b) => b.email.localeCompare(a.email, 'id', { sensitivity: 'base' }));
+        break;
+      case 'custom':
+      default:
+        result.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        break;
+    }
+
+    return result;
+  };
+
+  useEffect(() => {
+    setEmails(computeFilteredAndSortedEmails(allEmails, searchQuery, sortOption));
+  }, [allEmails, searchQuery, sortOption]);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1032,6 +1060,22 @@ export default function Home() {
                 </span>
               </div>
               <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Urutkan:</label>
+                  <select
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value as any)}
+                    disabled={loading}
+                    className="px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    title="Urutkan daftar"
+                  >
+                    <option value="custom">Kustom</option>
+                    <option value="newest">Terbaru</option>
+                    <option value="oldest">Terlama</option>
+                    <option value="az">Email A - Z</option>
+                    <option value="za">Email Z - A</option>
+                  </select>
+                </div>
                 <button
                   onClick={handleClearAll}
                   disabled={loading}
@@ -1103,15 +1147,15 @@ export default function Home() {
                   <div
                     key={emailItem.id}
                     data-email-id={emailItem.id}
-                    draggable={!editingEmail}
+                    draggable={!editingEmail && sortOption === 'custom'}
                     onDragStart={(e) => handleDragStart(e, emailItem.id)}
                     onDragEnd={handleDragEnd}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, emailItem.id)}
-                    className={`p-3 sm:p-4 rounded-xl transition-all duration-200 animate-slide-up border hover:shadow-md ${
+                     className={`p-3 sm:p-4 rounded-xl transition-all duration-200 animate-slide-up border hover:shadow-md ${
                       editingEmail === emailItem.id ? 'cursor-default' : 'cursor-default'
                     } ${
-                      draggedEmail === emailItem.id 
+                       sortOption !== 'custom' ? 'cursor-default' : draggedEmail === emailItem.id 
                         ? 'bg-blue-100 border-blue-300 opacity-50 scale-105 shadow-lg' 
                         : isDragging && draggedEmail !== emailItem.id
                         ? 'bg-green-50 border-green-200 border-dashed border-2'
@@ -1178,16 +1222,16 @@ export default function Home() {
                             <span className="text-xs font-medium text-gray-500 bg-gray-200 px-2 py-1 rounded-full min-w-[24px] text-center">
                               {index + 1}
                             </span>
-                            <div 
-                              className={`drag-handle cursor-move transition-colors p-2 sm:p-1 -m-1 touch-manipulation rounded-lg select-none ${
+                             <div 
+                              className={`drag-handle ${sortOption === 'custom' ? 'cursor-move' : 'cursor-default opacity-50'} transition-colors p-2 sm:p-1 -m-1 touch-manipulation rounded-lg select-none ${
                                 isLongPressActive && draggedEmail === emailItem.id 
                                   ? 'text-blue-600 bg-blue-200' 
                                   : 'text-gray-400 hover:text-gray-600 active:text-gray-700 hover:bg-gray-200 active:bg-gray-300'
                               }`}
-                              title="Tekan lama untuk drag & drop"
-                              onTouchStart={(e) => handleTouchStart(e, emailItem.id)}
-                              onTouchMove={handleTouchMove}
-                              onTouchEnd={(e) => handleTouchEnd(e, emailItem.id)}
+                              title={sortOption === 'custom' ? "Tekan lama untuk drag & drop" : "Drag & drop nonaktif saat urutan bukan Kustom"}
+                              onTouchStart={(e) => sortOption === 'custom' && handleTouchStart(e, emailItem.id)}
+                              onTouchMove={(e) => sortOption === 'custom' && handleTouchMove(e)}
+                              onTouchEnd={(e) => sortOption === 'custom' && handleTouchEnd(e, emailItem.id)}
                               style={{ touchAction: 'none' }}
                             >
                               <svg className="w-5 h-5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
