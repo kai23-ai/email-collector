@@ -14,17 +14,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const connection = await getConnection();
+    const client = await getConnection();
     const searchTerm = `%${query}%`;
     
-    const [rows] = await connection.query(
-      'SELECT * FROM emails WHERE email LIKE ? ORDER BY created_at DESC',
+    const result = await client.query(
+      'SELECT * FROM emails WHERE email ILIKE $1 ORDER BY created_at DESC',
       [searchTerm]
     );
     
-    await connection.end();
+    client.release();
     
-    return NextResponse.json({ success: true, data: rows });
+    return NextResponse.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Error searching emails:', error);
     return NextResponse.json(

@@ -16,14 +16,14 @@ export async function DELETE(
       );
     }
 
-    const connection = await getConnection();
-    const [result]: any = await connection.query(
-      'DELETE FROM emails WHERE id = ?',
+    const client = await getConnection();
+    const result = await client.query(
+      'DELETE FROM emails WHERE id = $1',
       [id]
     );
-    await connection.end();
+    client.release();
     
-    if (result.affectedRows === 0) {
+    if (result.rowCount === 0) {
       return NextResponse.json(
         { success: false, error: 'Email not found' },
         { status: 404 }
