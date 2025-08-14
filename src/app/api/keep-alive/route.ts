@@ -5,7 +5,7 @@ export async function GET() {
   
   // Simple database ping to keep connection alive
   try {
-    const { getConnection } = await import('../../../lib/db');
+    const { getConnection } = await import('../../../../lib/db');
     const client = await getConnection();
     await client.query('SELECT 1');
     client.release();
