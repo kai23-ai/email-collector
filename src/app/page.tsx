@@ -6,6 +6,7 @@ interface EmailData {
   id: number;
   email: string;
   password?: string;
+  sort_order: number;
   created_at: string;
 }
 
@@ -32,6 +33,8 @@ export default function Home() {
   const [showInputPassword, setShowInputPassword] = useState(false);
   const [editingEmail, setEditingEmail] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ email: '', password: '' });
+  const [draggedEmail, setDraggedEmail] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Password options
   const passwordOptions = [
@@ -376,7 +379,7 @@ export default function Home() {
     try {
       await navigator.clipboard.writeText(emailToCopy);
       setCopiedEmail(emailId);
-      
+
       // Reset copied state after animation - no message to avoid layout shift
       setTimeout(() => setCopiedEmail(null), 1500);
     } catch (error) {
@@ -391,7 +394,7 @@ export default function Home() {
     try {
       await navigator.clipboard.writeText(passwordToCopy);
       setCopiedPassword(emailId);
-      
+
       // Reset copied state after animation - no message to avoid layout shift
       setTimeout(() => setCopiedPassword(null), 1500);
     } catch (error) {
@@ -519,6 +522,95 @@ export default function Home() {
 
       setTimeout(() => setMessage(''), 3000);
     }
+  };
+
+  // Drag and Drop functions
+  const handleDragStart = (e: React.DragEvent, emailId: number) => {
+    setDraggedEmail(emailId);
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggedEmail(null);
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetEmailId: number) => {
+    e.preventDefault();
+    
+    if (!draggedEmail || draggedEmail === targetEmailId) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Create new order array
+      const emailsCopy = [...emails];
+      const draggedIndex = emailsCopy.findIndex(email => email.id === draggedEmail);
+      const targetIndex = emailsCopy.findIndex(email => email.id === targetEmailId);
+      
+      if (draggedIndex === -1 || targetIndex === -1) {
+        return;
+      }
+
+      // Remove dragged item and insert at target position
+      const [draggedItem] = emailsCopy.splice(draggedIndex, 1);
+      emailsCopy.splice(targetIndex, 0, draggedItem);
+
+      // Update sort_order for all emails
+      const emailOrders = emailsCopy.map((email, index) => ({
+        id: email.id,
+        sort_order: index + 1
+      }));
+
+      // Update UI immediately for better UX
+      setEmails(emailsCopy.map((email, index) => ({
+        ...email,
+        sort_order: index + 1
+      })));
+
+      // Update database
+      const response = await fetch('/api/emails/reorder', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ emailOrders }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update allEmails as well to maintain consistency
+        const updatedAllEmails = allEmails.map(email => {
+          const updatedEmail = emailsCopy.find(e => e.id === email.id);
+          return updatedEmail || email;
+        });
+        setAllEmails(updatedAllEmails);
+        
+        setMessage('Urutan email berhasil diupdate!');
+      } else {
+        // Revert changes if failed
+        await fetchEmails();
+        setMessage(result.error || 'Gagal mengupdate urutan email');
+      }
+    } catch (error) {
+      console.error('Error updating email order:', error);
+      // Revert changes if failed
+      await fetchEmails();
+      setMessage('Error mengupdate urutan email');
+    } finally {
+      setLoading(false);
+    }
+
+    setTimeout(() => setMessage(''), 3000);
   };
 
   // PIN Login Screen
@@ -729,8 +821,8 @@ export default function Home() {
           {/* Message */}
           {message && (
             <div className={`mt-4 p-4 rounded-xl animate-slide-down ${message.includes('berhasil')
-                ? 'bg-green-50 border border-green-200 text-green-800'
-                : 'bg-red-50 border border-red-200 text-red-800'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
               }`}>
               <div className="flex items-center">
                 {message.includes('berhasil') ? (
@@ -880,12 +972,35 @@ export default function Home() {
             </div>
 
             {/* Email List */}
+            {emails.length > 0 && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex items-center gap-2 text-sm text-blue-800">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Drag dan drop email untuk mengubah urutan. Urutan akan tersimpan otomatis.</span>
+                </div>
+              </div>
+            )}
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {emails.length > 0 ? (
                 emails.map((emailItem, index) => (
                   <div
                     key={emailItem.id}
-                    className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200 animate-slide-up border border-gray-200 hover:shadow-md"
+                    draggable={!editingEmail}
+                    onDragStart={(e) => handleDragStart(e, emailItem.id)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, emailItem.id)}
+                    className={`p-4 rounded-xl transition-all duration-200 animate-slide-up border hover:shadow-md ${
+                      editingEmail === emailItem.id ? 'cursor-default' : 'cursor-move'
+                    } ${
+                      draggedEmail === emailItem.id 
+                        ? 'bg-blue-100 border-blue-300 opacity-50 scale-105 shadow-lg' 
+                        : isDragging && draggedEmail !== emailItem.id
+                        ? 'bg-green-50 border-green-200 border-dashed border-2'
+                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                    }`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     {editingEmail === emailItem.id ? (
@@ -939,6 +1054,19 @@ export default function Home() {
                     ) : (
                       // View Mode
                       <div className="flex items-center justify-between">
+                        {/* Order Number & Drag Handle */}
+                        <div className="flex items-center mr-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-gray-500 bg-gray-200 px-2 py-1 rounded-full min-w-[24px] text-center">
+                              {index + 1}
+                            </span>
+                            <div className="drag-handle cursor-move text-gray-400 hover:text-gray-600 transition-colors p-1" title="Drag untuk mengurutkan">
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
                         <div className="flex flex-col flex-1">
                           <div className="flex items-center gap-4">
                             <div className="flex-1">

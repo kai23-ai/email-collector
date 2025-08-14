@@ -25,6 +25,7 @@ export async function initDatabase() {
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255),
+        sort_order INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -34,6 +35,12 @@ export async function initDatabase() {
     await client.query(`
       ALTER TABLE emails 
       ADD COLUMN IF NOT EXISTS password VARCHAR(255)
+    `);
+
+    // Add sort_order column if it doesn't exist (for existing tables)
+    await client.query(`
+      ALTER TABLE emails 
+      ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0
     `);
 
     // Create trigger for updated_at
