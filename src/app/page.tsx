@@ -1180,7 +1180,7 @@ export default function Home() {
                         {/* Email Content */}
                         <div className="space-y-2">
                           <div className="break-all">
-                            <span className="text-sm font-medium text-gray-900">{emailItem.email}</span>
+                            <span className="text-base sm:text-lg font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{emailItem.email}</span>
                           </div>
                           
                           {emailItem.password && (
