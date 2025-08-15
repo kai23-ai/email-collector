@@ -1,7 +1,7 @@
 # External Monitoring Setup untuk Railway Keep-Alive
 
 ## URL Aplikasi
-**Railway URL**: https://email-collector-production.up.railway.app
+**Railway URL**: https://khrlmm23.up.railway.app
 
 ## 1. UptimeRobot (GRATIS - RECOMMENDED)
 
@@ -10,7 +10,7 @@
 2. Klik "Add New Monitor"
 3. **Monitor Type**: HTTP(s)
 4. **Friendly Name**: Email Collector Railway
-5. **URL**: `https://email-collector-production.up.railway.app/api/health`
+5. **URL**: `https://khrlmm23.up.railway.app/api/health`
 6. **Monitoring Interval**: 30 minutes (gratis)
 7. **Alert Contacts**: Email Anda
 
@@ -28,7 +28,7 @@
 1. Daftar di: https://cron-job.org
 2. Klik "Create cronjob"
 3. **Title**: Railway Keep-Alive
-4. **URL**: `https://email-collector-production.up.railway.app/api/keep-alive`
+4. **URL**: `https://khrlmm23.up.railway.app/api/keep-alive`
 5. **Schedule**: 
    - **Minutes**: */25 (setiap 25 menit)
    - **Hours**: 0-16 (UTC) = 7-23 WIB
@@ -48,7 +48,7 @@
 ### Setup:
 1. Daftar di: https://www.pingdom.com
 2. **Check Name**: Email Collector
-3. **URL**: `https://email-collector-production.up.railway.app/api/health`
+3. **URL**: `https://khrlmm23.up.railway.app/api/health`
 4. **Check Interval**: 60 minutes (gratis)
 5. **Alert Policy**: Email notification
 
@@ -59,7 +59,7 @@
 ### Setup:
 1. Daftar di: https://www.statuscake.com
 2. **Test Name**: Railway Email Collector
-3. **Website URL**: `https://email-collector-production.up.railway.app/api/health`
+3. **Website URL**: `https://khrlmm23.up.railway.app/api/health`
 4. **Check Rate**: 30 minutes
 5. **Test Type**: HTTP
 6. **Contact Groups**: Email Anda
@@ -71,7 +71,7 @@
 ### Setup:
 1. Daftar di: https://www.freshworks.com/website-monitoring/
 2. **Check Name**: Email Collector Railway
-3. **URL**: `https://email-collector-production.up.railway.app/api/health`
+3. **URL**: `https://khrlmm23.up.railway.app/api/health`
 4. **Check Interval**: 1 minute (50 checks gratis)
 5. **Locations**: Pilih 1-2 lokasi
 
@@ -99,10 +99,10 @@
 ### Manual Test:
 ```bash
 # Test health endpoint
-curl https://email-collector-production.up.railway.app/api/health
+curl https://khrlmm23.up.railway.app/api/health
 
 # Test keep-alive endpoint  
-curl https://email-collector-production.up.railway.app/api/keep-alive
+curl https://khrlmm23.up.railway.app/api/keep-alive
 ```
 
 ### Expected Response:

@@ -7,7 +7,7 @@
 
 const https = require('https');
 
-const RAILWAY_URL = 'https://email-collector-production.up.railway.app';
+const RAILWAY_URL = 'https://khrlmm23.up.railway.app';
 
 function testEndpoint(path, description) {
   return new Promise((resolve) => {

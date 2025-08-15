@@ -35,7 +35,7 @@ jobs:
       - name: Ping Keep-Alive Endpoint
         if: steps.check-time.outputs.active == 'true'
         run: |
-          RAILWAY_URL="https://email-collector-production.up.railway.app"
+          RAILWAY_URL="https://khrlmm23.up.railway.app"
           
           echo "Pinging keep-alive endpoint: $RAILWAY_URL/api/keep-alive"
           response=$(curl -s -o /dev/null -w "%{http_code}" "$RAILWAY_URL/api/keep-alive")

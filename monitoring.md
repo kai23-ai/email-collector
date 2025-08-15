@@ -26,14 +26,14 @@
 - URL: https://uptimerobot.com
 - Setup: Monitor your Railway URL
 - **Interval: 30 minutes** (free tier, credit-friendly)
-- Endpoint: `https://email-collector-production.up.railway.app/api/health`
+- Endpoint: `https://khrlmm23.up.railway.app/api/health`
 - **Active Hours**: 7 AM - 11 PM WIB only
 
 ### 2. Cron-job.org (Free) - RECOMMENDED
 - URL: https://cron-job.org
 - Setup: HTTP GET request
 - **Schedule**: Every 25 minutes, active hours only
-- URL: `https://email-collector-production.up.railway.app/api/keep-alive`
+- URL: `https://khrlmm23.up.railway.app/api/keep-alive`
 - **Time**: 07:00-23:00 WIB (00:00-16:00 UTC)
 
 ### 3. GitHub Actions (Free for public repos) - INCLUDED
